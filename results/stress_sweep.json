@@ -1,0 +1,301 @@
+{
+  "calibration_mm": {
+    "clearance": [
+      {
+        "value": 0,
+        "success_rate": 1.0,
+        "ci95": [
+          0.9630051925239981,
+          0.9999999999999999
+        ],
+        "episodes": 100,
+        "step_outcomes": {
+          "success": 126
+        }
+      },
+      {
+        "value": 5,
+        "success_rate": 1.0,
+        "ci95": [
+          0.9630051925239981,
+          0.9999999999999999
+        ],
+        "episodes": 100,
+        "step_outcomes": {
+          "success": 126
+        }
+      },
+      {
+        "value": 10,
+        "success_rate": 0.96,
+        "ci95": [
+          0.9016278276739262,
+          0.984336949448152
+        ],
+        "episodes": 100,
+        "step_outcomes": {
+          "success": 122,
+          "grasp_miss": 4
+        }
+      },
+      {
+        "value": 15,
+        "success_rate": 0.71,
+        "ci95": [
+          0.6146092505999207,
+          0.7898529302601586
+        ],
+        "episodes": 100,
+        "step_outcomes": {
+          "grasp_miss": 34,
+          "success": 91,
+          "wrong_object": 1
+        }
+      },
+      {
+        "value": 20,
+        "success_rate": 0.52,
+        "ci95": [
+          0.4231640509017654,
+          0.6153561567991945
+        ],
+        "episodes": 100,
+        "step_outcomes": {
+          "grasp_miss": 59,
+          "success": 65,
+          "drop": 1,
+          "wrong_object": 1
+        }
+      },
+      {
+        "value": 30,
+        "success_rate": 0.29,
+        "ci95": [
+          0.21014706973984146,
+          0.38539074940007934
+        ],
+        "episodes": 100,
+        "step_outcomes": {
+          "grasp_miss": 87,
+          "success": 35,
+          "wrong_object": 4
+        }
+      }
+    ],
+    "simple": [
+      {
+        "value": 0,
+        "success_rate": 1.0,
+        "ci95": [
+          0.9630051925239981,
+          0.9999999999999999
+        ],
+        "episodes": 100,
+        "step_outcomes": {
+          "success": 126
+        }
+      },
+      {
+        "value": 5,
+        "success_rate": 1.0,
+        "ci95": [
+          0.9630051925239981,
+          0.9999999999999999
+        ],
+        "episodes": 100,
+        "step_outcomes": {
+          "success": 126
+        }
+      },
+      {
+        "value": 10,
+        "success_rate": 0.97,
+        "ci95": [
+          0.915479219195973,
+          0.9897456617765851
+        ],
+        "episodes": 100,
+        "step_outcomes": {
+          "success": 123,
+          "grasp_miss": 3
+        }
+      },
+      {
+        "value": 15,
+        "success_rate": 0.73,
+        "ci95": [
+          0.6356769977376873,
+          0.8073053908233518
+        ],
+        "episodes": 100,
+        "step_outcomes": {
+          "success": 93,
+          "grasp_miss": 32,
+          "wrong_object": 1
+        }
+      },
+      {
+        "value": 20,
+        "success_rate": 0.55,
+        "ci95": [
+          0.45244427031643447,
+          0.6438562489359654
+        ],
+        "episodes": 100,
+        "step_outcomes": {
+          "grasp_miss": 57,
+          "success": 67,
+          "drop": 1,
+          "wrong_object": 1
+        }
+      },
+      {
+        "value": 30,
+        "success_rate": 0.32,
+        "ci95": [
+          0.2366901081545688,
+          0.4166280225367919
+        ],
+        "episodes": 100,
+        "step_outcomes": {
+          "grasp_miss": 84,
+          "success": 38,
+          "wrong_object": 4
+        }
+      }
+    ]
+  },
+  "gap_mm": {
+    "clearance": [
+      {
+        "value": 30,
+        "success_rate": 0.98,
+        "ci95": [
+          0.9299868370580063,
+          0.9944981477650318
+        ],
+        "episodes": 100,
+        "step_outcomes": {
+          "success": 124,
+          "grasp_miss": 1,
+          "wrong_object": 1
+        }
+      },
+      {
+        "value": 15,
+        "success_rate": 1.0,
+        "ci95": [
+          0.9630051925239981,
+          0.9999999999999999
+        ],
+        "episodes": 100,
+        "step_outcomes": {
+          "success": 126
+        }
+      },
+      {
+        "value": 8,
+        "success_rate": 1.0,
+        "ci95": [
+          0.9630051925239981,
+          0.9999999999999999
+        ],
+        "episodes": 100,
+        "step_outcomes": {
+          "success": 126
+        }
+      },
+      {
+        "value": 4,
+        "success_rate": 0.99,
+        "ci95": [
+          0.9455124752390653,
+          0.9982326134344526
+        ],
+        "episodes": 100,
+        "step_outcomes": {
+          "success": 125,
+          "wrong_object": 1
+        }
+      },
+      {
+        "value": 1,
+        "success_rate": 0.97,
+        "ci95": [
+          0.915479219195973,
+          0.9897456617765851
+        ],
+        "episodes": 100,
+        "step_outcomes": {
+          "success": 123,
+          "wrong_object": 3
+        }
+      }
+    ],
+    "simple": [
+      {
+        "value": 30,
+        "success_rate": 0.99,
+        "ci95": [
+          0.9455124752390653,
+          0.9982326134344526
+        ],
+        "episodes": 100,
+        "step_outcomes": {
+          "success": 125,
+          "wrong_object": 1
+        }
+      },
+      {
+        "value": 15,
+        "success_rate": 1.0,
+        "ci95": [
+          0.9630051925239981,
+          0.9999999999999999
+        ],
+        "episodes": 100,
+        "step_outcomes": {
+          "success": 126
+        }
+      },
+      {
+        "value": 8,
+        "success_rate": 1.0,
+        "ci95": [
+          0.9630051925239981,
+          0.9999999999999999
+        ],
+        "episodes": 100,
+        "step_outcomes": {
+          "success": 126
+        }
+      },
+      {
+        "value": 4,
+        "success_rate": 0.99,
+        "ci95": [
+          0.9455124752390653,
+          0.9982326134344526
+        ],
+        "episodes": 100,
+        "step_outcomes": {
+          "success": 125,
+          "wrong_object": 1
+        }
+      },
+      {
+        "value": 1,
+        "success_rate": 0.97,
+        "ci95": [
+          0.915479219195973,
+          0.9897456617765851
+        ],
+        "episodes": 100,
+        "step_outcomes": {
+          "success": 123,
+          "wrong_object": 3
+        }
+      }
+    ]
+  }
+}

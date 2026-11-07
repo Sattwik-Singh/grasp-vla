@@ -1,0 +1,59 @@
+{
+  "attribute (hand-written)": {
+    "episodes": 100,
+    "successes": 99,
+    "success_rate": 0.99,
+    "ci95": [
+      0.9455124752390653,
+      0.9982326134344526
+    ],
+    "wrong_object_steps": 1
+  },
+  "mean": {
+    "episodes": 100,
+    "successes": 8,
+    "success_rate": 0.08,
+    "ci95": [
+      0.04109296948581091,
+      0.14998266879403072
+    ],
+    "wrong_object_steps": 110
+  },
+  "attn": {
+    "episodes": 100,
+    "successes": 8,
+    "success_rate": 0.08,
+    "ci95": [
+      0.04109296948581091,
+      0.14998266879403072
+    ],
+    "wrong_object_steps": 110
+  },
+  "film_mean": {
+    "episodes": 100,
+    "successes": 6,
+    "success_rate": 0.06,
+    "ci95": [
+      0.02778574526665662,
+      0.12476968531222507
+    ],
+    "wrong_object_steps": 113
+  },
+  "xattn": {
+    "episodes": 100,
+    "successes": 94,
+    "success_rate": 0.94,
+    "ci95": [
+      0.8752303146877748,
+      0.9722142547333433
+    ],
+    "wrong_object_steps": 5
+  },
+  "_meta": {
+    "condition": "clutter",
+    "seeds": [
+      4000,
+      4099
+    ]
+  }
+}

@@ -16,7 +16,7 @@ import numpy as np  # noqa: E402
 import torch  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from grasp_vla.learned import POOLINGS, GroundingPolicy, observation, tokenize  # noqa: E402
+from grasp_vla.learned import POOLINGS, GroundingPolicy, observation, target_to_world, tokenize  # noqa: E402
 from grasp_vla.sim import TabletopSim  # noqa: E402
 
 R = Path("results")
@@ -34,8 +34,8 @@ plt.rcParams.update({
 })
 LABEL = {"clean": "Clean", "clutter": "Clutter", "sensor_noise": "Sensor\nnoise",
          "low_friction": "Low\nfriction", "combined": "Combined"}
-PLABEL = {"mean": "Mean", "attn": "Attention\n(learned query)", "film_mean": "FiLM + mean",
-          "xattn": "Cross-attention"}
+PLABEL = {"mean": "Mean", "attn": "Learned-\nquery attn.", "film_mean": "FiLM\n+ mean",
+          "xattn": "Cross-\nattention"}
 
 
 def fig_grasp():
@@ -61,6 +61,33 @@ def fig_grasp():
     fig.savefig(FIG / "grasp_success.png")
 
 
+def fig_stress():
+    d = json.loads((R / "stress_sweep.json").read_text())
+    fig, axes = plt.subplots(1, 2, figsize=(5.6, 2.3), sharey=True)
+    specs = (("gap_mm", "Minimum gap between objects (mm)", True),
+             ("calibration_mm", "Camera calibration error, std (mm)", False))
+    for ax, (knob, xlabel, invert) in zip(axes, specs):
+        for planner, col, mk, name in (("clearance", S1, "o", "Clearance-aware planner"),
+                                       ("simple", S2, "s", "Simple planner")):
+            pts = sorted(d[knob][planner], key=lambda r: r["value"])
+            x = [r["value"] for r in pts]
+            y = np.array([r["success_rate"] for r in pts]) * 100
+            lo = np.array([r["ci95"][0] for r in pts]) * 100
+            hi = np.array([r["ci95"][1] for r in pts]) * 100
+            ax.fill_between(x, lo, hi, color=col, alpha=0.12, lw=0)
+            ax.plot(x, y, color=col, lw=2, marker=mk, ms=5, mec="white", mew=0.8, label=name)
+        ax.set_xlabel(xlabel)
+        if invert:
+            ax.invert_xaxis()
+        ax.grid(axis="x", visible=False)
+    axes[0].set_ylabel("Episode success (%)")
+    axes[0].set_ylim(0, 103)
+    axes[0].legend(loc="lower left", fontsize=7.5)
+    fig.tight_layout(w_pad=1.5)
+    fig.savefig(FIG / "stress.pdf")
+    fig.savefig(FIG / "stress.png")
+
+
 def fig_pooling():
     runs = json.loads((R / "pooling_runs.json").read_text())
     fig, axes = plt.subplots(1, 2, figsize=(5.6, 2.3))
@@ -71,16 +98,25 @@ def fig_pooling():
             ax.bar(i, v.mean(), width=0.62, color=S1 if p == "xattn" else "#9fc2ec",
                    edgecolor="white", linewidth=1)
             ax.scatter(np.full(len(v), i) + np.linspace(-0.12, 0.12, len(v)), v, s=9, color=INK, zorder=3)
-            ax.text(i, v.mean() + (0.02 if scale == 1 else 2), f"{v.mean():.2f}" if scale == 1 else f"{v.mean():.1f}",
+            ax.text(i, v.max() + (0.03 if scale == 1 else 3), f"{v.mean():.2f}" if scale == 1 else f"{v.mean():.1f}",
                     ha="center", va="bottom", fontsize=7.5, color=INK)
         ax.set_xticks(range(len(POOLINGS)), [PLABEL[p] for p in POOLINGS], fontsize=7)
         ax.set_title(title, fontsize=8.5, color=INK, loc="left")
         ax.grid(axis="x", visible=False)
-    axes[0].set_ylim(0, 1.1)
-    axes[1].set_ylim(0, 105)
+    axes[0].set_ylim(0, 1.15)
+    axes[1].set_ylim(0, 112)
     fig.tight_layout(w_pad=2)
     fig.savefig(FIG / "pooling.pdf")
     fig.savefig(FIG / "pooling.png")
+
+
+def world_to_pixel(sim, xy, z=0.02):
+    view, proj = sim.camera_matrices()
+    V = np.array(view).reshape(4, 4, order="F")
+    P = np.array(proj).reshape(4, 4, order="F")
+    c = P @ V @ np.array([xy[0], xy[1], z, 1.0])
+    c = c[:3] / c[3]
+    return (c[0] + 1) / 2 * sim.CAM_W - 0.5, (1 - c[1]) / 2 * sim.CAM_H - 0.5
 
 
 def fig_attention(seed: int = 20003):
@@ -101,8 +137,12 @@ def fig_attention(seed: int = 20003):
         with torch.no_grad():
             _, _, w = m(torch.from_numpy(crops)[None], torch.from_numpy(pos)[None],
                         torch.from_numpy(valid)[None], ids, return_all=True)
+            xy_pred = m(torch.from_numpy(crops)[None], torch.from_numpy(pos)[None],
+                        torch.from_numpy(valid)[None], ids)[0].numpy()
         w = w[0].numpy()
         ax.imshow(rgb[40:280, 40:300])
+        px, py = world_to_pixel(sim, target_to_world(xy_pred))
+        ax.plot(px - 40, py - 40, marker="+", color=INK, ms=9, mew=1.6)
         for d, wi in zip(dets, w):
             x0, y0, x1, y1 = d.bbox
             cx, cy = (x0 + x1) / 2 - 40, (y0 + y1) / 2 - 40
@@ -121,6 +161,8 @@ def fig_attention(seed: int = 20003):
 
 if __name__ == "__main__":
     fig_grasp()
+    if (R / "stress_sweep.json").exists():
+        fig_stress()
     if (R / "pooling_runs.json").exists():
         fig_pooling()
     if (R / "checkpoints" / "xattn_seed0.pt").exists():
