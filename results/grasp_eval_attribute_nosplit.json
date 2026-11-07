@@ -1,0 +1,122 @@
+{
+  "clean": {
+    "episodes": 200,
+    "successes": 200,
+    "success_rate": 1.0,
+    "ci95": [
+      0.9811539940816791,
+      1.0
+    ],
+    "steps": 244,
+    "step_success_rate": 1.0,
+    "step_outcomes": {
+      "success": 244,
+      "parse_fail": 0,
+      "no_detection": 0,
+      "wrong_object": 0,
+      "grasp_miss": 0,
+      "drop": 0,
+      "place_miss": 0
+    },
+    "single_target_rate": 1.0,
+    "two_target_rate": 1.0
+  },
+  "clutter": {
+    "episodes": 200,
+    "successes": 185,
+    "success_rate": 0.925,
+    "ci95": [
+      0.8799554020266798,
+      0.9540254929427476
+    ],
+    "steps": 244,
+    "step_success_rate": 0.9344262295081968,
+    "step_outcomes": {
+      "success": 228,
+      "parse_fail": 0,
+      "no_detection": 0,
+      "wrong_object": 11,
+      "grasp_miss": 4,
+      "drop": 1,
+      "place_miss": 0
+    },
+    "single_target_rate": 0.9551282051282052,
+    "two_target_rate": 0.8181818181818182
+  },
+  "sensor_noise": {
+    "episodes": 200,
+    "successes": 200,
+    "success_rate": 1.0,
+    "ci95": [
+      0.9811539940816791,
+      1.0
+    ],
+    "steps": 244,
+    "step_success_rate": 1.0,
+    "step_outcomes": {
+      "success": 244,
+      "parse_fail": 0,
+      "no_detection": 0,
+      "wrong_object": 0,
+      "grasp_miss": 0,
+      "drop": 0,
+      "place_miss": 0
+    },
+    "single_target_rate": 1.0,
+    "two_target_rate": 1.0
+  },
+  "low_friction": {
+    "episodes": 200,
+    "successes": 200,
+    "success_rate": 1.0,
+    "ci95": [
+      0.9811539940816791,
+      1.0
+    ],
+    "steps": 244,
+    "step_success_rate": 1.0,
+    "step_outcomes": {
+      "success": 244,
+      "parse_fail": 0,
+      "no_detection": 0,
+      "wrong_object": 0,
+      "grasp_miss": 0,
+      "drop": 0,
+      "place_miss": 0
+    },
+    "single_target_rate": 1.0,
+    "two_target_rate": 1.0
+  },
+  "combined": {
+    "episodes": 200,
+    "successes": 181,
+    "success_rate": 0.905,
+    "ci95": [
+      0.8563973488560237,
+      0.9383373863501365
+    ],
+    "steps": 244,
+    "step_success_rate": 0.9139344262295082,
+    "step_outcomes": {
+      "success": 223,
+      "parse_fail": 0,
+      "no_detection": 0,
+      "wrong_object": 14,
+      "grasp_miss": 7,
+      "drop": 0,
+      "place_miss": 0
+    },
+    "single_target_rate": 0.9423076923076923,
+    "two_target_rate": 0.7727272727272727
+  },
+  "_meta": {
+    "grounder": "attribute",
+    "color_split": false,
+    "episodes_per_condition": 200,
+    "seeds": [
+      2000,
+      2199
+    ],
+    "wall_seconds": 423.1
+  }
+}

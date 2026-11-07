@@ -1,0 +1,10 @@
+pybullet>=3.2
+numpy
+scipy
+torch
+pillow
+matplotlib
+pytest
+# optional: open-vocabulary grounding and the LLM planner
+# transformers
+# anthropic
