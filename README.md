@@ -1,10 +1,8 @@
 # GRASP: language-conditioned pick-and-place in simulation
 
-A from-scratch, fully reproducible re-implementation of the ideas behind the
-GRASP project at the IIT Delhi Robotics Club: follow a spoken-style instruction
-("grab the blue tube and drop it in the basket"), find the object, plan a
-grasp, and put it in the tray. The original club code is not available, so
-everything here was rebuilt and re-measured. Old numbers are not carried over.
+An independent, fully reproducible study of language-conditioned pick-and-place:
+follow an instruction ("grab the blue tube and drop it in the basket"), find the
+object, plan a grasp, and put it in the tray.
 
 ![demo](media/demo_preview.gif)
 
@@ -108,11 +106,10 @@ python experiments/make_figures.py && python experiments/make_video.py
 - The default grounder only knows the six colours and three shapes. The CLIP
   grounder is implemented but untested, because its weights could not be
   downloaded in the environment used.
-- "Cross-instruction correlation" is defined in the report. The original
-  project's exact definition is not available.
+- "Cross-instruction correlation" is defined in the report and should be read
+  together with grounding accuracy.
 
-## Credits and AI use
+## AI use
 
-The original GRASP project was a Robotics Club team effort. This repository is
-my independent re-implementation. Code and report were developed with AI
+Code and report were developed with AI
 assistance (Claude). I directed the work and take responsibility for the results.

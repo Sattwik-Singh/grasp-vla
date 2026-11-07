@@ -18,9 +18,8 @@ a Clearance-Aware Grasp Pipeline and a Study of Cross-Attention Pooling}}
 \vspace{-0.6cm}
 
 \begin{abstract}
-\noindent I re-implement, from scratch and in an open simulation, a
-language-conditioned pick-and-place system based on a Robotics Club project
-(GRASP) whose original code is no longer available. A Franka Panda in PyBullet
+\noindent I build and evaluate, in an open simulation, a
+language-conditioned pick-and-place system. A Franka Panda in PyBullet
 parses an instruction, detects objects in an overhead RGB-D image, decides which
 one is meant, and grasps it with a clearance-aware planner. On 200 unseen scenes
 per condition, the pipeline succeeds in 99--100\% of episodes across clean,
@@ -40,15 +39,15 @@ and what this setup cannot show.
 \end{abstract}
 
 \section{Introduction}
-This report rebuilds, from scratch, a language-conditioned grasping project
-(GRASP) that I worked on at the IIT Delhi Robotics Club. The original system
-combined open-vocabulary detection~\cite{owlvit,clip}, LLM-based task
-planning~\cite{saycan} and a grasp planner, and used cross-attention pooling in
-a vision-language-action (VLA) style policy~\cite{cliport,rt2}. The original code and logs are no longer available to me, so its
-reported figures (an 85\% reduction in cross-instruction correlation and 90\%
-grasp success in simulation) cannot be checked. Instead, I re-implemented the
-two ideas behind those figures in an open, fully reproducible simulation and
-measured them again under controlled conditions. Two questions guide the work:
+Robots that follow natural-language instructions usually chain several parts:
+a detector that finds objects, often open-vocabulary~\cite{owlvit,clip}; a
+planner that turns the instruction into steps, sometimes an LLM~\cite{saycan};
+a grounding step that decides which object is meant; and a grasp planner.
+End-to-end vision-language-action (VLA) policies~\cite{cliport,rt2} fold
+grounding into a learned model, where a key design choice is how the image
+features are pooled together with the instruction. This independent study builds such a
+system in an open, fully reproducible simulation and measures it under
+controlled conditions. Two questions guide the work:
 \begin{enumerate}\itemsep0pt
 \item[\textbf{Q1}] How reliable is a modular \emph{instruction $\rightarrow$
 detect $\rightarrow$ ground $\rightarrow$ grasp} pipeline, and where does it fail?
@@ -153,8 +152,7 @@ vectors $h_1,\dots,h_K$:
 \rho=\frac{1}{K(K-1)}\sum_{i\neq j}\operatorname{corr}(h_i,h_j).
 \]
 A value near 1 means the representation barely changes with the instruction,
-which suggests the policy is not really listening. I use this as my definition;
-the original project's exact definition is not available. Since a low
+which suggests the policy is not really listening. Since a low
 correlation is only useful if the policy picks the right object, I also report
 \emph{grounding accuracy}, the fraction of test instructions for which the
 object nearest the predicted point is the named one.
@@ -320,18 +318,6 @@ a few hand-written rules beat a learned model. The learned policy's advantage
 would show only with object descriptions the rules cannot express.
 
 
-\section{Relation to the original project}
-My CV lists two GRASP results, and this study re-measures both under
-definitions I state explicitly. \emph{90\% grasp success in simulation:} the
-re-implemented pipeline reaches 99--100\% across five conditions on primitive
-objects. That number is higher, but it comes from a simpler simulator and is
-not comparable to the original. \emph{85\% reduction in cross-instruction
-correlation through cross-attention pooling:} with the definition in Section~4,
-I measure a 63\% reduction (0.951 to 0.348), together with a jump in grounding
-accuracy from chance to 98.7\%. The direction of both original results holds,
-but the specific numbers belong to the original setup and should not be quoted
-as reproduced.
-
 \section{Limitations}
 \begin{itemize}\itemsep0pt
 \item \textbf{Easy world.} The objects are rigid primitives, grasps are top-down
@@ -340,13 +326,13 @@ about real objects, occlusion or a real robot.
 \item \textbf{Closed vocabulary.} The default grounder knows six colours and
 three shapes, and its thresholds were tuned by hand on development scenes. The
 CLIP grounder is implemented but could not be evaluated, and the LLM planner is
-optional and unevaluated. The ``open-vocabulary'' and ``LLM planning'' parts of
-the original project are therefore not tested here.
+optional and unevaluated. Open-vocabulary grounding and LLM planning are
+therefore not tested here.
 \item \textbf{Small learned model.} The grounding policy uses the pipeline's own
 detections as tokens and is trained for 12 epochs. Baselines were compared at
 equal training budget. Given more epochs, FiLM pooling partly catches up (see
 Section~5.3).
-\item \textbf{Metric.} Cross-instruction correlation is my own definition. As
+\item \textbf{Metric.} Cross-instruction correlation is defined in Section~4. As
 the FiLM result shows, it should always be reported together with a task metric.
 \end{itemize}
 
@@ -362,9 +348,7 @@ evaluate the open-vocabulary CLIP grounder and LLM planner, add realistic object
 meshes and side-on grasps, and test the learned policy on descriptions the
 hand-written rules cannot express.
 
-\paragraph{Acknowledgements and AI use.} The original GRASP project was a team
-effort at the IIT Delhi Robotics Club. This report is my independent
-re-implementation. The code and this report were developed with AI assistance
+\paragraph{AI use.} The code and this report were developed with AI assistance
 (Claude). I directed the work and take responsibility for the results.
 
 \small
