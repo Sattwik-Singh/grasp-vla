@@ -1,4 +1,4 @@
-"""Experiment 2: mean vs. attention vs. cross-attention pooling.
+"""Experiment 2: four ways to pool object tokens (see grasp_vla/learned.py).
 
 Trains GroundingPolicy with each pooling type over several seeds and reports,
 on held-out test scenes:
@@ -22,9 +22,8 @@ import torch
 import torch.nn.functional as F
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from grasp_vla.learned import HALF, GroundingPolicy, cross_instruction_corr  # noqa: E402
+from grasp_vla.learned import HALF, POOLINGS, GroundingPolicy, cross_instruction_corr  # noqa: E402
 
-POOLINGS = ("mean", "attn", "xattn")
 
 
 def load(split, data_dir="data"):
@@ -34,12 +33,13 @@ def load(split, data_dir="data"):
 
 def evaluate(model, d, batch=256):
     model.eval()
-    imgs = torch.from_numpy(d["imgs"])
+    obs = [torch.from_numpy(d[k]) for k in ("crops", "pos", "valid")]
     preds, hs = [], []
     with torch.no_grad():
         for i in range(0, len(d["scene"]), batch):
             sl = slice(i, i + batch)
-            xy, h, _ = model(imgs[d["scene"][sl]], torch.from_numpy(d["canon_ids"][sl]), return_all=True)
+            sc = d["scene"][sl]
+            xy, h, _ = model(*(o[sc] for o in obs), torch.from_numpy(d["canon_ids"][sl]), return_all=True)
             preds.append(xy)
             hs.append(h)
     pred = torch.cat(preds).numpy()
@@ -57,7 +57,7 @@ def evaluate(model, d, batch=256):
             "cross_instr_corr": float(np.mean(corrs))}
 
 
-def train(pooling, seed, tr, te, epochs, batch=64, lr=2e-3, log=print):
+def train(pooling, seed, tr, te, epochs, batch=64, lr=1e-3, log=print):
     torch.manual_seed(seed)
     np.random.seed(seed)
     model = GroundingPolicy(pooling)
@@ -65,7 +65,7 @@ def train(pooling, seed, tr, te, epochs, batch=64, lr=2e-3, log=print):
     n = len(tr["scene"])
     steps = epochs * (n // batch)
     sched = torch.optim.lr_scheduler.OneCycleLR(opt, lr, total_steps=steps, pct_start=0.1)
-    imgs = torch.from_numpy(tr["imgs"])
+    crops, pos, valid = (torch.from_numpy(tr[k]) for k in ("crops", "pos", "valid"))
     ids = torch.from_numpy(tr["ids"])
     tgt = torch.from_numpy(tr["target"])
     scene = torch.from_numpy(tr["scene"])
@@ -77,17 +77,19 @@ def train(pooling, seed, tr, te, epochs, batch=64, lr=2e-3, log=print):
         tot = 0.0
         for i in range(n // batch):
             b = perm[i * batch:(i + 1) * batch]
-            img = imgs[scene[b]]
+            sb = scene[b]
+            c = crops[sb]
             if np.random.rand() < 0.5:  # cheap augmentation: brightness jitter on RGB
-                img = img.clone()
-                img[:, :3] = (img[:, :3].float() * float(np.random.uniform(0.85, 1.15))).clamp(0, 255).byte()
-            loss = F.smooth_l1_loss(model(img, ids[b]), tgt[b], beta=0.05)
+                c = c.clone()
+                c[:, :, :3] = (c[:, :, :3].float() * float(np.random.uniform(0.85, 1.15))).clamp(0, 255).byte()
+            loss = F.mse_loss(model(c, pos[sb], valid[sb], ids[b]), tgt[b])
             opt.zero_grad()
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             opt.step()
             sched.step()
             tot += loss.item()
-        if ep % 5 == 4 or ep == epochs - 1:
+        if ep % 5 == 4 or ep == epochs - 1 or ep == 0:
             m = evaluate(model, te)
             history.append({"epoch": ep + 1, "train_loss": tot / (n // batch), **m})
             log(f"  {pooling} seed {seed} ep {ep+1}: loss {tot/(n//batch):.4f} {m} ({time.time()-t0:.0f}s)")

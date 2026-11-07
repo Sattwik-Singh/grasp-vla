@@ -66,7 +66,7 @@ def _grounder(name):
 
 
 def run_condition(args):
-    cond, seeds, grounder_name, split = args
+    cond, seeds, grounder_name, split, planner = args
     sim = TabletopSim()
     grounder = _grounder(grounder_name)
     rows = []
@@ -74,7 +74,8 @@ def run_condition(args):
         objects = sim.reset(seed, **CONDITIONS[cond])
         rng = np.random.default_rng(seed)
         text, truth = make_instruction(rng, objects)
-        steps = run_episode(sim, text, grounder, truth_step=truth, split_by_color=split)
+        steps = run_episode(sim, text, grounder, truth_step=truth, split_by_color=split,
+                            grasp_planner=planner)
         outcomes = [s.outcome for s in steps]
         if len(steps) < len(truth):  # planner found fewer targets than intended
             outcomes += ["parse_fail"] * (len(truth) - len(steps))
@@ -124,18 +125,19 @@ def main():
     ap.add_argument("--out", default="results")
     ap.add_argument("--no-color-split", action="store_true",
                     help="ablation: depth-only segmentation")
-    ap.add_argument("--seed0", type=int, default=2000)
+    ap.add_argument("--seed0", type=int, default=3000)
+    ap.add_argument("--grasp-planner", choices=["clearance", "simple"], default="clearance")
     a = ap.parse_args()
 
     seeds = np.arange(a.seed0, a.seed0 + a.episodes)
-    tag = a.grounder + ("_nosplit" if a.no_color_split else "")
-    jobs = [(c, chunk.tolist(), a.grounder, not a.no_color_split) for c in CONDITIONS
+    tag = "_".join([a.grounder, a.grasp_planner] + (["nosplit"] if a.no_color_split else []) + [f"s{a.seed0}"])
+    jobs = [(c, chunk.tolist(), a.grounder, not a.no_color_split, a.grasp_planner) for c in CONDITIONS
             for chunk in np.array_split(seeds, a.workers)]
     t0 = time.time()
     with Pool(a.workers) as pool:
         rows = [r for part in pool.map(run_condition, jobs) for r in part]
     summary = summarise(rows)
-    summary["_meta"] = {"grounder": a.grounder, "color_split": not a.no_color_split, "episodes_per_condition": a.episodes,
+    summary["_meta"] = {"grounder": a.grounder, "color_split": not a.no_color_split, "grasp_planner": a.grasp_planner, "episodes_per_condition": a.episodes,
                         "seeds": [int(seeds[0]), int(seeds[-1])],
                         "wall_seconds": round(time.time() - t0, 1)}
     out = Path(a.out)

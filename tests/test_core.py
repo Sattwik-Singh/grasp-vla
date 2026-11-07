@@ -61,33 +61,53 @@ def test_cross_instruction_corr_limits():
     assert cross_instruction_corr(eye) < 0
 
 
-@pytest.mark.parametrize("pooling", ["mean", "attn", "xattn"])
+def _obs(b=3, n=8):
+    crops = torch.randint(0, 255, (b, n, 4, 24, 24), dtype=torch.uint8)
+    pos = torch.rand(b, n, 2) * 2 - 1
+    valid = torch.ones(b, n, dtype=torch.bool)
+    valid[:, -2:] = False
+    return crops, pos, valid
+
+
+@pytest.mark.parametrize("pooling", ["mean", "attn", "film_mean", "xattn"])
 def test_policy_shapes(pooling):
     m = GroundingPolicy(pooling)
-    img = torch.randint(0, 255, (3, 4, 96, 96), dtype=torch.uint8)
     ids = torch.tensor([tokenize("put the red cube in the tray")] * 3)
-    xy, h, w = m(img, ids, return_all=True)
+    xy, h, w = m(*_obs(), ids, return_all=True)
     assert xy.shape == (3, 2) and h.shape == (3, 128)
-    assert (w is None) == (pooling == "mean")
+    assert (w is None) == (pooling in ("mean", "film_mean"))
 
 
-def test_mean_pooling_ignores_instruction_before_fusion():
-    m = GroundingPolicy("mean").eval()
-    img = torch.randint(0, 255, (1, 4, 96, 96), dtype=torch.uint8)
-    t = m.vis(img)
-    a, _ = m.pool(t, m.lang(torch.tensor([tokenize("red cube")])))
-    b, _ = m.pool(t, m.lang(torch.tensor([tokenize("blue ball")])))
-    assert torch.allclose(a, b)
-
-
-def test_xattn_pooling_depends_on_instruction():
+@pytest.mark.parametrize("pooling", ["mean", "attn", "film_mean", "xattn"])
+def test_padding_slots_are_ignored(pooling):
     torch.manual_seed(0)
-    m = GroundingPolicy("xattn").eval()
-    img = torch.randint(0, 255, (1, 4, 96, 96), dtype=torch.uint8)
-    t = m.vis(img)
-    a, _ = m.pool(t, m.lang(torch.tensor([tokenize("red cube")])))
-    b, _ = m.pool(t, m.lang(torch.tensor([tokenize("blue ball")])))
-    assert not torch.allclose(a, b)
+    m = GroundingPolicy(pooling).eval()
+    crops, pos, valid = _obs(1)
+    ids = torch.tensor([tokenize("red cube")])
+    a = m(crops, pos, valid, ids)
+    crops2, pos2 = crops.clone(), pos.clone()
+    crops2[:, -2:] = 0
+    pos2[:, -2:] = 5.0
+    assert torch.allclose(a, m(crops2, pos2, valid, ids), atol=1e-5)
+
+
+def _pooled(m, phrase, crops, pos, valid):
+    return m.pool(m.vis(crops, pos), m.lang(torch.tensor([tokenize(phrase)])), valid)[0]
+
+
+@pytest.mark.parametrize("pooling", ["mean", "attn"])
+def test_instruction_free_pooling_ignores_instruction(pooling):
+    m = GroundingPolicy(pooling).eval()
+    obs = _obs(1)
+    assert torch.allclose(_pooled(m, "red cube", *obs), _pooled(m, "blue ball", *obs))
+
+
+@pytest.mark.parametrize("pooling", ["film_mean", "xattn"])
+def test_instruction_aware_pooling_depends_on_instruction(pooling):
+    torch.manual_seed(0)
+    m = GroundingPolicy(pooling).eval()
+    obs = _obs(1)
+    assert not torch.allclose(_pooled(m, "red cube", *obs), _pooled(m, "blue ball", *obs))
 
 
 def test_sim_detects_every_object_in_clean_scenes():
@@ -104,3 +124,13 @@ def test_sim_detects_every_object_in_clean_scenes():
             gt = sim.object_pos(o.body_id)[:2]
             assert min(np.linalg.norm(d.centroid[:2] - gt) for d in dets) < 0.01
     sim.close()
+
+
+def test_clearance_planner_avoids_a_neighbour():
+    from grasp_vla.grasp_planning import finger_collisions
+
+    # neighbour 5 cm away along +y: fingers closing along y would hit it
+    pts = np.array([[0.0, 0.05 + dx] for dx in np.linspace(0, 0.01, 20)])
+    hit_y = finger_collisions(pts, np.zeros(2), 0.0, 0.04)          # closes along y
+    hit_x = finger_collisions(pts, np.zeros(2), math.pi / 2, 0.04)  # closes along x
+    assert hit_y > 0 and hit_x == 0

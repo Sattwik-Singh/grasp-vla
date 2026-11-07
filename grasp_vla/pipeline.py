@@ -13,6 +13,7 @@ import numpy as np
 import pybullet as p
 
 from .control import PandaController
+from .grasp_planning import grasp_yaw, plan_grasp
 from .language import Step, parse
 from .perception import Detection, detect
 from .sim import PARK_POS, TRAY_POS, TabletopSim
@@ -34,21 +35,12 @@ class StepResult:
     info: dict = field(default_factory=dict)
 
 
-def grasp_yaw(det: Detection) -> float:
-    """Wrist yaw for a top-down grasp, wrapped into (-pi/4, pi/4]."""
-    yaw = det.yaw
-    while yaw > math.pi / 4:
-        yaw -= math.pi / 2
-    while yaw <= -math.pi / 4:
-        yaw += math.pi / 2
-    return yaw
-
-
-def execute_grasp(ctrl: PandaController, det: Detection, approach: float = 0.12) -> float:
+def execute_grasp(ctrl: PandaController, det: Detection, yaw: float | None = None,
+                  opening: float = 0.04, approach: float = 0.12) -> float:
     """Pick the detected object and lift it. Returns finger opening after closing."""
-    yaw = grasp_yaw(det)
+    yaw = grasp_yaw(det) if yaw is None else yaw
     x, y, z = det.centroid
-    ctrl.open_gripper()
+    ctrl.open_gripper(opening)
     ctrl.move_to([x, y, det.top_z + approach], yaw)
     ctrl.move_to([x, y, z], yaw, steps=180)
     width = ctrl.close_gripper()
@@ -71,7 +63,8 @@ def in_tray(pos) -> bool:
 
 def run_episode(sim: TabletopSim, instruction: str, grounder, planner=parse,
                 truth_step: list[Step] | None = None,
-                split_by_color: bool = True) -> list[StepResult]:
+                split_by_color: bool = True,
+                grasp_planner: str = "clearance") -> list[StepResult]:
     """Run one instruction. `truth_step` (optional) is the intended plan, used for
     scoring when the planner itself is being tested."""
     ctrl = PandaController(sim)
@@ -96,7 +89,12 @@ def run_episode(sim: TabletopSim, instruction: str, grounder, planner=parse,
         if not matches(intended, obj.spec):
             res.outcome = "wrong_object"
         z0 = sim.object_pos(obj.body_id)[2]
-        width = execute_grasp(ctrl, det)
+        if grasp_planner == "clearance":
+            yaw, opening, diag = plan_grasp(sim, depth, det)
+            res.info.update(diag)
+        else:
+            yaw, opening = grasp_yaw(det), 0.04
+        width = execute_grasp(ctrl, det, yaw, opening)
         res.info["finger_width"] = width
         lifted = sim.object_pos(obj.body_id)[2] - z0
         res.lift = float(lifted)
@@ -106,7 +104,7 @@ def run_episode(sim: TabletopSim, instruction: str, grounder, planner=parse,
             results.append(res)
             continue
         # hold for a second; a slipping object counts as dropped
-        ctrl.move_to(ctrl.ee_pos(), grasp_yaw(det), steps=HOLD_STEPS)
+        ctrl.move_to(ctrl.ee_pos(), yaw, steps=HOLD_STEPS)
         if sim.object_pos(obj.body_id)[2] - z0 < LIFT_HEIGHT:
             res.outcome = "drop" if res.outcome == "success" else res.outcome
             results.append(res)
