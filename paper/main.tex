@@ -32,8 +32,9 @@ to 71\% at 15\,mm of error. Object spacing, even down to 1\,mm, barely matters.
 In a controlled comparison of four ways to pool object tokens in a learned
 grounding policy, cross-attention pooling with an instruction-derived query
 cuts the correlation between representations of different instructions by 63\%
-(0.951$\rightarrow$0.348) and is the only variant that learns the task (98.7\%
-grounding accuracy against a 16.8\% chance level). Inside the robot loop it
+(0.951$\rightarrow$0.348) and is the only variant that learns the task within the same 12-epoch budget
+(98.7\% grounding accuracy against a 16.8\% chance level; an instruction-modulated
+mean pool reaches 61\% after 40 epochs). Inside the robot loop it
 completes 94\% of cluttered episodes. I also report where the system fails
 and what this setup cannot show.
 \end{abstract}
@@ -267,7 +268,7 @@ all trained for 12 epochs.}
 
 Cross-attention pooling lowers the cross-instruction correlation from 0.951
 (mean pooling) to 0.348, a \textbf{63\% reduction}. It is also the only
-variant that learns the task within the training budget: 98.7\% grounding
+variant that learns the task within the 12-epoch budget: 98.7\% grounding
 accuracy and a 4.5\,mm median error, against chance level (16.8\%) for every
 other variant (Figure~\ref{fig:pool}, Table~\ref{tab:pool}). The learned-query
 attention baseline rules out ``more parameters'' or ``attention in general''
@@ -277,11 +278,19 @@ matters is that the \emph{instruction} chooses what to attend to.
 The FiLM baseline is also instruction-aware, yet it barely moves from chance
 within 12 epochs. Mean pooling forces it to represent ``where the named object
 is'' as an average over all objects, which is a much harder function to learn.
-%%FILM%%
+To check whether this is just slow learning, I trained FiLM and mean pooling
+for 40 epochs (one seed each). FiLM does learn, slowly: 50.4\% grounding
+accuracy after 20 epochs and 60.7\% after 40, with a 49\,mm median error,
+still far below cross-attention after 12 epochs. Mean pooling, by contrast, stays at chance (17.3\%) after 40 epochs, even
+though its cross-instruction correlation falls to 0.59 and FiLM's to 0.43.
+So cross-attention is not the only pooling that can work, but it is far easier
+to learn: the instruction picks out one object directly, instead of the
+network having to cancel out every other object inside an average.
 
 \textbf{Two cautions.} First, correlation and accuracy are not the same thing.
-FiLM's correlation (0.86) is lower than mean pooling's, with almost no gain in
-accuracy, so a lower correlation alone is not evidence of better grounding.
+After 40 epochs, mean pooling's correlation falls to 0.59 while its accuracy
+stays at chance, so a lower correlation alone is not evidence of better
+grounding.
 Second, attention weights are not a clean explanation of the decision.
 Figure~\ref{fig:attn} shows a success and a failure on the same scene. Pooled
 over three seeds, the error rate is highest when the target is a cylinder
@@ -305,7 +314,7 @@ checkpoint) and running the full pick-and-place loop on 100 new cluttered
 scenes (seeds 4000--4099) gives the same ranking. Cross-attention succeeds in
 \textbf{94\%} of episodes (95\% interval 87.5--97.2) with 5 wrong-object steps.
 Mean, learned-query and FiLM pooling succeed in 8\%, 8\% and 6\% of episodes,
-with more than 110 wrong-object steps each. The hand-written attribute grounder
+with 110 or more wrong-object steps each. The hand-written attribute grounder
 still does better (99\%). In this closed world of six colours and three shapes,
 a few hand-written rules beat a learned model. The learned policy's advantage
 would show only with object descriptions the rules cannot express.
@@ -334,8 +343,9 @@ CLIP grounder is implemented but could not be evaluated, and the LLM planner is
 optional and unevaluated. The ``open-vocabulary'' and ``LLM planning'' parts of
 the original project are therefore not tested here.
 \item \textbf{Small learned model.} The grounding policy uses the pipeline's own
-detections as tokens and is trained for 12 epochs. Baselines that fail within
-this budget might succeed with more training (see Section~5.3).
+detections as tokens and is trained for 12 epochs. Baselines were compared at
+equal training budget. Given more epochs, FiLM pooling partly catches up (see
+Section~5.3).
 \item \textbf{Metric.} Cross-instruction correlation is my own definition. As
 the FiLM result shows, it should always be reported together with a task metric.
 \end{itemize}
@@ -345,7 +355,7 @@ A simple modular pipeline with two targeted fixes, colour splitting of merged
 detections and clearance-aware finger placement, picks and places named objects
 in 99--100\% of unseen simulated scenes. Its main weakness is its complete trust
 in camera calibration: beyond about 10\,mm of error, grasps start to miss. In a controlled comparison, letting the instruction form the attention
-query is what allowed a small policy to ground instructions at all. It lowers
+query made a small policy learn to ground instructions quickly and accurately. It lowers
 the correlation between representations of different instructions by 63\% and
 lifts grounding accuracy from chance to 98.7\%. The natural next steps are to
 evaluate the open-vocabulary CLIP grounder and LLM planner, add realistic object

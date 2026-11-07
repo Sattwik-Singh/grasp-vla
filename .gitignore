@@ -8,3 +8,4 @@ paper/*.log
 paper/*.fls
 paper/*.fdb_latexmk
 paper/*.out
+results/long_training/checkpoints/

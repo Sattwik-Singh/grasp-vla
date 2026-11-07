@@ -78,7 +78,7 @@ between variants.
 | **Cross-attention** | **0.348** | **98.7%** | **4.5 mm** |
 
 Chance level is 16.8%. Cross-attention cuts the correlation by **63%**, and it is
-the only variant that learns the task within the 12-epoch budget. Inside the
+the only variant that learns the task within the 12-epoch budget. Trained for 40 epochs, FiLM reaches 61%, while mean pooling stays at chance even as its correlation drops to 0.59, so correlation alone is not proof of grounding. Inside the
 robot loop on 100 cluttered scenes, it succeeds in **94%** of episodes. The other
 learned variants reach 6–8%, and the hand-written grounder reaches 99%.
 *Cross-instruction correlation* is the mean pairwise correlation between the
